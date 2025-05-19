@@ -57,7 +57,7 @@ def display_sample(rgb_obs, semantic_obs=np.array([]), depth_obs=np.array([])):
 
 
 test_scene = os.path.join(
-    data_path, "scene_datasets/habitat-test-scenes/apartment_1.glb"
+    data_path, "scene_datasets/mp3d_example/17DRP5sb8fy/17DRP5sb8fy.glb"
 )
 
 sim_settings = {
