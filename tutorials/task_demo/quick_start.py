@@ -1,6 +1,7 @@
 import habitat
 import cv2
-
+from omegaconf import OmegaConf
+import os
 
 FORWARD_KEY="w"
 LEFT_KEY="a"
@@ -13,13 +14,21 @@ def transform_rgb_bgr(image):
 
 
 def example():
+    output_path = "./output/resolve_conf.yaml"
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
     env = habitat.Env(
         config=habitat.get_config("benchmark/nav/pointnav/pointnav_habitat_test.yaml")
     )
     
     print("Environment creation successful")
-    print(f"Env Action Space:{env._task.action_space}")
-    observations = env.reset()
+    print(f"Env Action Space:{env.action_space}")
+    print(f"Env Observation Space:{env.observation_space}")
+
+    # Save the resolved config
+    with open(output_path, "w") as f:
+        OmegaConf.save(config=env._config, f=f)
+        observations = env.reset()
     print("Destination, distance: {:3f}, theta(radians): {:.2f}".format(
         observations["pointgoal_with_gps_compass"][0],
         observations["pointgoal_with_gps_compass"][1]))

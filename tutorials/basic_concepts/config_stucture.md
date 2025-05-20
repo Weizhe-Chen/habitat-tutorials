@@ -38,6 +38,7 @@ Habitat V0.3.3 uses Hydra as the config framework. For official config system in
         - _self_
     ```
     > Habitat adds `habitat/config` to Config Search Path using [`HabitatConfigPlugin`](https://github.com/facebookresearch/habitat-lab/blob/main/habitat-lab/habitat/config/default_structured_configs.py).
+- **Config Merge**: All config files or structured config referred to in the input config will be merged into one output config. The basic merging rule can be found below.
 - **Config Injection**: Config injection is used when you want to add a config to a node in current config rather than directly override it. e.g.
     ```yaml
     /habitat/simulator/sensor_setups@habitat.simulator.agents.main_agent: rgbds_agent
@@ -112,3 +113,46 @@ There are 3 subfolders in habitat: `dataset`, `simulator`, `task`.
 - `simulator`: This folder mainly config the agent using default structured config, we can use Config Injection to add sensors and agents.
 - `task`: yaml in `task` folder load `task_config_base` by default, which is a complicated config(see [TaskConfig](https://github.com/facebookresearch/habitat-lab/blob/main/habitat-lab/habitat/config/default_structured_configs.py#L1373)). The important nodes to override are `lab_sensors`, `actions` and `measures`.
     > `lab_sensors` is different from agent sensors, they provide task level perception, like `habitat.task.lab_sensors.compass_sensor` for angle difference in radians between the current rotation of the robot and the start rotation of the robot along the vertical axis, for more details, see [here](https://github.com/facebookresearch/habitat-lab/blob/main/habitat-lab/habitat/config/CONFIG_KEYS.md).
+
+## Config Merging Rule
+Habitat use tree structure to manage configs. They are merged following the rules below:
+1. If there is a `@package` in yaml file, it will be merged to the target defined by `@package`, no matter where the yaml file is and which group it belongs to.
+e.g.(`habitat_test.yaml`)
+    ```yaml
+    # @package habitat.dataset
+    defaults:
+    - /habitat/dataset: dataset_config_schema
+    - _self_
+
+    type: PointNav-v1
+    split: train
+    data_path: data/datasets/pointnav/habitat-test-scenes/v1/{split}/{split}.json.gz
+    ```
+    > A special case is `@package _global_`, which means merge all contents to the root level.
+2. If there is no `@package`, the yaml will be merged to the key defined by its group, like the 
+    ```yaml
+    - /habitat/dataset: dataset_config_schema
+    ```
+    in above `habitat_test.yaml`. It will be merged to
+    ```yaml
+    habitat:
+        dataset:
+    ```
+3. If there is no `@package`, and no group is given, the yaml will be merged to the called level. e.g.
+    ```yaml
+    defaults:
+    - task_config_base
+    - actions:
+        - stop
+        - move_forward
+        - turn_left
+        - turn_right
+    - measurements:
+        - distance_to_goal
+        - success
+        - spl
+        - distance_to_goal_reward
+    - lab_sensors:
+        - pointgoal_with_gps_compass_sensor
+    - _self_
+    ```
