@@ -9,7 +9,7 @@ FORWARD_KEY="w"
 LEFT_KEY="a"
 RIGHT_KEY="d"
 FINISH="f"
-
+END='q'
 
 def transform_rgb_bgr(image):
     return image[:, :, [2, 1, 0]]
@@ -71,6 +71,8 @@ def example():
             action = 'turn_right'
         elif keystroke == ord(FINISH):
             action = 'stop'
+        elif keystroke == ord(END):
+            break
         else:
             print("INVALID KEY")
             continue
