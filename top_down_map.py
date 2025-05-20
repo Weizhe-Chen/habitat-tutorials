@@ -32,7 +32,7 @@ repo = git.Repo(".", search_parent_directories=True)
 dir_path = repo.working_tree_dir
 data_path = os.path.join(dir_path, "data")
 output_path = os.path.join(
-    dir_path, "video/"
+    dir_path, "output/"
 )
 os.makedirs(output_path, exist_ok=True)
 os.chdir(dir_path)
