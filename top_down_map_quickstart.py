@@ -32,6 +32,12 @@ def quat_to_yaw(q):
 
     return yaw
 
+def compute_goal_position(agent_pos, agent_yaw, distance, theta):
+    x_goal = agent_pos[2] + distance * math.cos(agent_yaw + theta)
+    z_goal = agent_pos[0] + distance * math.sin(agent_yaw + theta)
+    y_goal = agent_pos[1]  # 高度保持不变
+    return np.array([z_goal, y_goal, x_goal])
+
 def example():
     env = habitat.Env(
         config=habitat.get_config("benchmark/nav/pointnav/pointnav_habitat_test.yaml")
@@ -49,10 +55,8 @@ def example():
     distance = observations["pointgoal_with_gps_compass"][0]
     theta = observations["pointgoal_with_gps_compass"][1]
     yaw = quat_to_yaw(env.sim.get_agent_state().rotation)
-    goal_x = agent_inil_pos[0] + distance * math.cos(yaw - theta)
-    goal_z = agent_inil_pos[2] + distance * math.sin(yaw - theta)
-    goal_y = agent_inil_pos[1]
-    goal_position = np.array([goal_x, goal_y, goal_z])
+    goal_position = compute_goal_position(agent_inil_pos, yaw, distance, theta)
+    print(f"goal position:{goal_position}")
 
 
     count_steps = 0
@@ -86,15 +90,13 @@ def example():
         agent_rot = env.sim.get_agent_state().rotation  # quat
         
         print(f"agent_pos:{agent_pos}")
-        print(f"agent_rot:{agent_rot}")
+        print(f"goal position:{goal_position}")
         q = agent_rot  
         yaw = quat_to_yaw(q)
         print(f"yaw:{yaw}")
         # Convert real world x z to image axis
         map_resolution = topdown_map.shape[0:2]
         grid_x, grid_y = maps.to_grid(agent_pos[2], agent_pos[0], grid_resolution=map_resolution, sim=env.sim)
-        print(f"Map origin: {env.sim.pathfinder.get_bounds()}")
-        print(f"gird x:{grid_x}, grid_y:{grid_y}")
         topdown_with_agent = maps.draw_agent(
             topdown_map_color.copy(),
             (grid_x, grid_y),  # Attention to the x,y order
@@ -102,15 +104,12 @@ def example():
             agent_radius_px=10,
         )
 
-        print(f"shape of observation:{len(observations['pointgoal_with_gps_compass'])}")
-
-
-        print(f"goal position:{goal_position}")
         birdseye_view = maps.pointnav_draw_target_birdseye_view(
             agent_position=agent_pos,
             agent_heading=yaw,
             goal_position=goal_position,
         )
+
         cv2.imshow("RGB", transform_rgb_bgr(observations["rgb"]))
         cv2.imshow("Top-Down Map with Agent", topdown_with_agent)
         cv2.imshow("PointNav Birdseye View", birdseye_view)

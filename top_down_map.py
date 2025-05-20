@@ -37,54 +37,7 @@ output_path = os.path.join(
 os.makedirs(output_path, exist_ok=True)
 os.chdir(dir_path)
 
-def example_pointnav_draw_target_birdseye_view():
-    goal_radius = 0.5
-    goal = NavigationGoal(position=[10, 0.25, 10], radius=goal_radius)
-    agent_position = [0, 0.25, 0]
-    agent_rotation = -np.pi / 4
 
-    dummy_episode = NavigationEpisode(
-        goals=[goal],
-        episode_id="dummy_id",
-        scene_id="dummy_scene",
-        start_position=agent_position,
-        start_rotation=agent_rotation,
-    )
-
-    agent_position = np.array(agent_position)
-    target_image = maps.pointnav_draw_target_birdseye_view(
-        agent_position,
-        agent_rotation,
-        np.asarray(dummy_episode.goals[0].position),
-        goal_radius=dummy_episode.goals[0].radius,
-        agent_radius_px=25,
-    )
-    plt.imshow(target_image)
-    plt.title("pointnav_taregt_image.png")
-    plt.show()
-
-def example_get_topdown_map():
-    config = habitat.get_config(
-        config_path=os.path.join(
-            dir_path,
-            "./config/benchmark/nav/pointnav/pointnav_habitat_test.yaml",
-        )
-    )
-    dataset = habitat.make_dataset(
-        id_dataset=config.habitat.dataset.type, config=config.habitat.dataset
-    )
-    with habitat.Env(config=config, dataset=dataset) as env:
-        env.reset()
-        top_down_map = maps.get_topdown_map_from_sim(
-            cast("HabitatSim", env.sim), map_resolution=1024
-        )
-        recolor_map = np.array(
-            [[255, 255, 255], [128, 128, 128], [0, 0, 0]], dtype=np.uint8
-        )
-        top_down_map = recolor_map[top_down_map]
-        plt.imshow(top_down_map)
-        plt.title("top_down_map.png")
-        plt.show()
 
 class ShortestPathFollowerAgent(Agent):
     r"""Implementation of the :ref:`habitat.core.agent.Agent` interface that
