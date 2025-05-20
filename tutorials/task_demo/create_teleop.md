@@ -1,3 +1,34 @@
+# Create Env and Teleop
+
+This tutorial aims to provide a basic framework for navigation using keyboard input.
+
+## Create Environment
+
+Habitat Lab use a high level abstraction like gym. You can use a config file to create an environment. Bascially this config file should contain `dataset`, `task`, and `simulator`.
+
+```python
+import habitat
+env = habitat.Env(
+        config=habitat.get_config("benchmark/nav/pointnav/pointnav_habitat_test.yaml")
+    )
+```
+
+This `env` object contains all information needed for simulation.
+- Full config: `env._config` is the resolved config
+- Action and Observation Space: `env.action_space` and `env.observation_space`
+
+## Step
+Using `env.action_space` you can see all the actions used in this sim, directly use the name to move the robot:
+```python
+observations = env.step('move_forward')
+```
+
+## Get Observation
+
+You can find all default observation types [here](https://github.com/facebookresearch/habitat-lab/blob/5e0d63838cf3f6c7008c9eed00610d556c46c1e3/habitat-lab/habitat/sims/habitat_simulator/habitat_simulator.py#L107), just check the keys in `env.observation_space`.
+
+## Full Code:
+```python
 import habitat
 import cv2
 from omegaconf import OmegaConf
@@ -74,3 +105,5 @@ def example():
 
 if __name__ == "__main__":
     example()
+
+```

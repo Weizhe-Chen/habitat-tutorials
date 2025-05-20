@@ -1,6 +1,7 @@
 # Habitat Action Introduction
 
 Action is the abstraction that agent can execute in the environment — such as moving forward, turning left, or stopping. In Habitat-Lab, an action is a command you give the agent during `env.step(action_name)`. The action is created, registered, and refered to in a config file(typically in `task/xxx.yaml`)
+> Unlike traditional robotics config, `action` in habitat is connected to the task, not directly to the agent. This is because different tasks may require different action spaces, action semantics, and goal conditions, even for the same agent and scene
 
 ## Action Creation and Use Pipeline
 
