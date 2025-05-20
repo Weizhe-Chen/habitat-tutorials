@@ -3,6 +3,7 @@ import cv2
 import os
 from habitat.utils.visualizations import maps
 import math
+import numpy as np
 
 FORWARD_KEY="w"
 LEFT_KEY="a"
@@ -19,10 +20,6 @@ def quat_to_yaw(q):
     cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.x * q.x)
     yaw = math.atan2(siny_cosp, cosy_cosp)
     
-    # Habitat forward = -Y axis, so zero yaw should correspond to facing -Y.
-    # atan2 result zero is +X axis in math coord, so rotate yaw by -pi/2
-    # yaw -= math.pi 
-    
     # Normalize yaw to [-pi, pi]
     if yaw < -math.pi:
         yaw += 2 * math.pi
@@ -31,7 +28,8 @@ def quat_to_yaw(q):
     
     # Map image: positive yaw should rotate clockwise, flip sign
     # yaw = -yaw
-    
+    yaw  -= math.pi 
+
     return yaw
 
 def example():
@@ -47,7 +45,14 @@ def example():
     cv2.imshow("RGB", transform_rgb_bgr(observations["rgb"]))
 
     print("Agent stepping around inside environment.")
-
+    agent_inil_pos = env.sim.get_agent_state().position
+    distance = observations["pointgoal_with_gps_compass"][0]
+    theta = observations["pointgoal_with_gps_compass"][1]
+    yaw = quat_to_yaw(env.sim.get_agent_state().rotation)
+    goal_x = agent_inil_pos[0] + distance * math.cos(yaw - theta)
+    goal_z = agent_inil_pos[2] + distance * math.sin(yaw - theta)
+    goal_y = agent_inil_pos[1]
+    goal_position = np.array([goal_x, goal_y, goal_z])
 
 
     count_steps = 0
@@ -79,6 +84,7 @@ def example():
         
         agent_pos = env.sim.get_agent_state().position  # (x, y, z)
         agent_rot = env.sim.get_agent_state().rotation  # quat
+        
         print(f"agent_pos:{agent_pos}")
         print(f"agent_rot:{agent_rot}")
         q = agent_rot  
@@ -97,10 +103,13 @@ def example():
         )
 
         print(f"shape of observation:{len(observations['pointgoal_with_gps_compass'])}")
+
+
+        print(f"goal position:{goal_position}")
         birdseye_view = maps.pointnav_draw_target_birdseye_view(
             agent_position=agent_pos,
             agent_heading=yaw,
-            goal_position=observations['pointgoal_with_gps_compass'][0:3],
+            goal_position=goal_position,
         )
         cv2.imshow("RGB", transform_rgb_bgr(observations["rgb"]))
         cv2.imshow("Top-Down Map with Agent", topdown_with_agent)
