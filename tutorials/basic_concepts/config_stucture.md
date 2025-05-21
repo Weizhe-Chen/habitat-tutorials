@@ -156,3 +156,67 @@ e.g.(`habitat_test.yaml`)
         - pointgoal_with_gps_compass_sensor
     - _self_
     ```
+
+## Modify Config in script
+
+1. Get the config file
+    ```python
+    config = habitat.get_config(
+            config_path=os.path.join(
+                dir_path,
+                "./config/benchmark/nav/pointnav/pointnav_habitat_test.yaml",
+            )
+        )
+    ```
+2. By default, this config is frozen, and you can not modify it, you can check this:
+    ```python
+    print(OmegaConf.is_readonly(config.habitat.simulator)) # Or any other key you want
+    ```
+3. To defrost the config file for modifying, you should use:
+    ```python
+    with habitat.config.read_write(config):
+        print(OmegaConf.is_readonly(config.habitat.simulator)) # Now it will be False
+    ```
+4. Modify the config
+    ```python
+    # The first way is to use update() method to update
+    with config.habitat.simulator.agents.main_agent.sim_sensors.update(
+        {
+                    "new_rgb": # Contents you want to set
+        }
+    )
+    # The second way is to modify the config directly
+    top_rgb_cfg = # Contents you want to set
+    config.habitat.simulator.agents.main_agent.sim_sensors.top_rgb_sensor = top_rgb_cfg # Pay attention you need the new key name here
+    ```
+
+The contents you want to set can also be set via two ways: structured config or not. When you use structured config, you will enjoy the type checking, autocompletion, etc. The shortcome is that you may not always find a suitable defined structured config and you may want to define one.(e.g. if you use `HabitatSimRGBSensor` to create sensor, you will fail due to the lack of `uuid` key in this structured config).
+```python
+# We use HeadRGBSensorConfig so that uuid can be set
+config.habitat.simulator.agents.main_agent.sim_sensors.update(
+            {
+                "new_rgb": HeadRGBSensorConfig(
+                width=256,
+                height=256,
+                position=[0.0, 1.7, 0.0],
+                sensor_subtype="PINHOLE",
+                uuid="new_rgb",
+                type="HabitatSimRGBSensor"  # REQUIRED!
+                )
+            }
+```
+
+The other way is to use plain dict, this can be done if your plain dict contains all information needed:
+```python
+with habitat.config.read_write(config):
+        config.habitat.simulator.agents.main_agent.sim_sensors.top_rgb_sensor = {
+        "type": "HabitatSimRGBSensor",
+        "width": 256,
+        "height": 256,
+        "position": [0.0, 1.7, 0.0],
+        "sensor_subtype": "PINHOLE",
+        "uuid": "new_rgb",
+    }          
+```
+
+You can check the full code in `add_sensor_update.py`, `add_sensor_plain_dict.py` and `add_sensor_structured.py` respectively.
