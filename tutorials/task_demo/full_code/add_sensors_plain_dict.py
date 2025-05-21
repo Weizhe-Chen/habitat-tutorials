@@ -9,13 +9,14 @@ from habitat.config.default_structured_configs import (
     FogOfWarConfig,
     TopDownMapMeasurementConfig,
 )
+from habitat.config.default_structured_configs import HabitatSimRGBSensorConfig
 from habitat.utils.visualizations.utils import (
     images_to_video,
     observations_to_image,
     overlay_frame,
 )
 import git 
-
+from omegaconf import OmegaConf
 FORWARD_KEY="w"
 LEFT_KEY="a"
 RIGHT_KEY="d"
@@ -37,28 +38,19 @@ def example():
             "./config/benchmark/nav/pointnav/pointnav_habitat_test.yaml",
         )
     )
+    print(type(config))
+    print(OmegaConf.is_readonly(config.habitat.simulator.agents.main_agent.sim_sensors))
+    print(OmegaConf.is_struct(config.habitat.simulator.agents.main_agent.sim_sensors))
     # Add habitat.tasks.nav.nav.TopDownMap and habitat.tasks.nav.nav.Collisions measures
     with habitat.config.read_write(config):
-        config.habitat.task.measurements.update(
-            {
-                "top_down_map": TopDownMapMeasurementConfig(
-                    map_padding=3,
-                    map_resolution=1024,
-                    draw_source=True,
-                    draw_border=True,
-                    draw_shortest_path=True,
-                    draw_view_points=True,
-                    draw_goal_positions=True,
-                    draw_goal_aabbs=True,
-                    fog_of_war=FogOfWarConfig(
-                        draw=True,
-                        visibility_dist=5.0,
-                        fov=90,
-                    ),
-                ),
-                "collisions": CollisionsMeasurementConfig(),
-            }
-        )
+        config.habitat.simulator.agents.main_agent.sim_sensors.top_rgb_sensor = {
+        "type": "HabitatSimRGBSensor",
+        "width": 256,
+        "height": 256,
+        "position": [0.0, 1.7, 0.0],
+        "sensor_subtype": "PINHOLE",
+        "uuid": "new_rgb",
+    }          
 
     env = habitat.Env(
         config=config
@@ -69,9 +61,11 @@ def example():
     print("Destination, distance: {:3f}, theta(radians): {:.2f}".format(
         observations["pointgoal_with_gps_compass"][0],
         observations["pointgoal_with_gps_compass"][1]))
-
+    print(f"Observation space{env.observation_space}")
     print("Agent stepping around inside environment.")
 
+    cv2.imshow("New-RGB", transform_rgb_bgr(observations["new_rgb"]))
+    cv2.imshow("RGB", transform_rgb_bgr(observations["rgb"]))
 
 
     count_steps = 0
@@ -93,18 +87,9 @@ def example():
             continue
 
         observations = env.step(action)
-        # Get metrics
-        info = env.get_metrics()
-        # Concatenate RGB-D observation and topdowm map into one image
-        frame = observations_to_image(observations, info)
+        cv2.imshow("RGB", transform_rgb_bgr(observations["rgb"]))
 
-        # Remove top_down_map from metrics
-        info.pop("top_down_map")
-        # Overlay numeric metrics onto frame
-        frame = overlay_frame(frame, info)
-        # Add fame to vis_frames
-        frame = transform_rgb_bgr(frame)
-        cv2.imshow("RGB with TopDown Map", frame)
+        cv2.imshow("New-RGB", transform_rgb_bgr(observations["new_rgb"]))
      
 
 
